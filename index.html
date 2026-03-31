@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SipVault | Premium Drink Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=League+Spartan:wght@500;700;800&display=swap" rel="stylesheet">
+    <!-- Phosphorus Icons (using a simple CDN for icon equivalents, FontAwesome works too but let's use RemixIcon for a modern look) -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Meta tags for SEO & best practices -->
+    <meta name="description" content="A premium vault for tracking, rating, and organizing your favorite beers, spirits, and cocktails.">
+</head>
+<body>
+
+
+    <main class="app-container">
+        
+        <!-- Header -->
+        <header class="vibe-header">
+            <div class="logo">
+                <i class="ri-goblet-fill"></i>
+                <h1>SipVault</h1>
+            </div>
+            <p class="subtitle">Your curated journal of liquid craftsmanship</p>
+        </header>
+
+        <!-- Tool Bar (Sorting, Filtering, Action) -->
+        <section class="toolbar">
+            <div class="filters">
+                <div class="input-group search-group" style="width: 100%;">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="global-search" placeholder="Search drinks, makers, locations..." style="width: 100%;">
+                </div>
+                <div class="input-group">
+                    <i class="ri-sort-desc"></i>
+                    <select id="sort-select">
+                        <option value="recent">Recently Added</option>
+                        <option value="rating">Highest Rated</option>
+                        <option value="rating-desc">Lowest Rated</option>
+                        <option value="type">Type of Drink</option>
+                        <option value="location">Location</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <i class="ri-filter-3-line"></i>
+                    <select id="filter-type-select">
+                        <option value="all">All Drinks</option>
+                        <option value="beer">Beers Only</option>
+                        <option value="spirit">Spirits Only</option>
+                        <option value="cocktail">Cocktails Only</option>
+                    </select>
+                </div>
+
+                <div class="input-group" id="spirit-filter-group" style="display: none;">
+                    <i class="ri-goblet-fill"></i>
+                    <select id="filter-spirit-select">
+                        <option value="">Any Spirit</option>
+                        <option value="Whiskey">Whiskey</option>
+                        <option value="Vodka">Vodka</option>
+                        <option value="Rum">Rum</option>
+                        <option value="Tequila">Tequila</option>
+                        <option value="Gin">Gin</option>
+                        <option value="Brandy">Brandy</option>
+                        <option value="Other">Other...</option>
+                    </select>
+                    <input type="text" id="filter-spirit-other" placeholder="Type spirit..." style="display: none; margin-left: 0.5rem; border-left: 1px solid var(--glass-border); padding-left: 0.5rem; width: 120px;">
+                </div>
+            </div>
+
+        </section>
+
+        <div class="desktop-action-bar">
+            <button id="add-drink-btn" class="primary-btn">
+                <i class="ri-add-line"></i> <span class="btn-text">Add Entry</span>
+            </button>
+        </div>
+
+        <!-- Personalized Recommendations -->
+        <section id="recommendations-container" class="recommendations-section hidden">
+            <div class="section-header">
+                <h2><i class="ri-sparkling-fill" style="color: var(--accent-beer);"></i> Curated For You</h2>
+                <span class="hint-text">Based on your highest ratings</span>
+            </div>
+            <div id="recommendations-carousel" class="recommendations-carousel">
+                <!-- Mini cards injected here -->
+            </div>
+        </section>
+
+        <!-- Main Drink Grid -->
+        <section id="drink-grid" class="drink-grid">
+            <!-- Drink cards injected via JS -->
+            <div class="empty-state">
+                <i class="ri-glass-2-line"></i>
+                <h3>Your vault is empty</h3>
+                <p>Start logging your favorite drinks to build your collection.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Add Drink Modal -->
+    <div id="add-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <button id="close-modal" class="icon-btn"><i class="ri-close-line"></i></button>
+            <h2 id="modal-title">Log a Drink</h2>
+            
+            <form id="add-drink-form">
+                
+                <div class="form-row">
+                    <div class="form-group w-50">
+                        <label for="drink-category">Category</label>
+                        <select id="drink-category" name="category" required>
+                            <option value="beer">Beer</option>
+                            <option value="spirit">Spirit</option>
+                            <option value="cocktail">Cocktail</option>
+                        </select>
+                    </div>
+                    <div class="form-group w-50">
+                        <label for="drink-rating">Rating</label>
+                        <div class="star-rating">
+                            <i class="ri-star-line" data-val="1"></i>
+                            <i class="ri-star-line" data-val="2"></i>
+                            <i class="ri-star-line" data-val="3"></i>
+                            <i class="ri-star-line" data-val="4"></i>
+                            <i class="ri-star-line" data-val="5"></i>
+                            <input type="hidden" id="drink-rating" name="rating" value="0" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Photo</label>
+                    <div style="display: flex; gap: 10px; flex-direction: column;">
+                        <input type="file" id="drink-image-file" accept="image/*" capture="environment" style="display: none;">
+                        <button type="button" id="trigger-camera-btn" class="secondary-btn" style="justify-content: center; display: flex; gap: 5px;">
+                            <i class="ri-camera-fill"></i> Snap Photo / Upload
+                        </button>
+                        <div id="camera-preview-container" class="hidden" style="margin-top: 5px; position: relative;">
+                            <img id="camera-preview" src="" style="width: 100%; height: 180px; object-fit: cover; border-radius: var(--border-radius-sm); border: 1px solid var(--surface-border);">
+                            <button type="button" id="remove-photo-btn" class="icon-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius: 50%; color: white;"><i class="ri-close-line"></i></button>
+                        </div>
+                        <p style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; letter-spacing: 1px; margin: 5px 0;">— OR PASTE IMAGE URL —</p>
+                        <input type="url" id="drink-image" name="image" placeholder="https://...">
+                    </div>
+                </div>
+
+                <!-- Dynamic fields container -->
+                <div id="dynamic-fields" class="dynamic-transition">
+                    <!-- Default loaded as Beer/Spirit -->
+                    <div class="form-group">
+                        <label for="drink-subtype" id="subtype-label">Type of Beer</label>
+                        <input type="text" id="drink-subtype" name="subtype" placeholder="e.g. Stout, IPA, Whiskey...">
+                    </div>
+                    <div class="form-group">
+                        <label for="drink-location" id="location-label">Location Bought / Brewery</label>
+                        <input type="text" id="drink-location" name="location" placeholder="e.g. Dublin, Local Pub">
+                    </div>
+                </div>
+
+                <button type="submit" class="primary-btn full-width mt-4">Save Entry</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JS script -->
+    <script src="app.js"></script>
+</body>
+</html>
