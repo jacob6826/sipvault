@@ -135,12 +135,19 @@ a {
 
 .input-group select, 
 .input-group input {
-  background: transparent;
+  background-color: transparent;
   border: none;
   color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   outline: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
+}
+
+.input-group input {
+  cursor: text;
 }
 
 .input-group select option {
@@ -587,6 +594,17 @@ textarea {
   width: 100%;
   min-height: 48px; /* Touch target */
   font-size: 1rem; /* Prevent iOS zoom */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+select {
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3e%3cpath fill='none' d='M0 0h24v24H0z'/%3e%3cpath d='M12 13.172l4.95-4.95 1.414 1.414L12 16 5.636 9.636 7.05 8.222z' fill='rgba(255,255,255,0.6)'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2rem;
+  cursor: pointer;
 }
 
 input:focus, select:focus, textarea:focus {

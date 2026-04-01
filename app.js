@@ -21,6 +21,10 @@ const filterTypeSelect = document.getElementById('filter-type-select');
 const spiritFilterGroup = document.getElementById('spirit-filter-group');
 const filterSpiritSelect = document.getElementById('filter-spirit-select');
 const filterSpiritOther = document.getElementById('filter-spirit-other');
+const ratingFilterGroup = document.getElementById('rating-filter-group');
+const filterMinRating = document.getElementById('filter-min-rating');
+const beerFilterGroup = document.getElementById('beer-filter-group');
+const filterBeerType = document.getElementById('filter-beer-type');
 // Dynamic Form Elements
 const categorySelect = document.getElementById('drink-category');
 const dynamicFieldsContainer = document.getElementById('dynamic-fields');
@@ -41,6 +45,7 @@ const globalSearchInput = document.getElementById('global-search');
 
 // --- App Initialization ---
 function init() {
+    updateFiltersForCategory();
     renderDrinks();
     setupEventListeners();
 }
@@ -168,14 +173,7 @@ function setupEventListeners() {
     // --- Filters & Sorting ---
     sortSelect.addEventListener('change', renderDrinks);
     filterTypeSelect.addEventListener('change', () => {
-        if (filterTypeSelect.value === 'cocktail' || filterTypeSelect.value === 'spirit' || filterTypeSelect.value === 'all') {
-            spiritFilterGroup.style.display = 'flex';
-        } else {
-            spiritFilterGroup.style.display = 'none';
-            filterSpiritSelect.value = '';
-            filterSpiritOther.style.display = 'none';
-            filterSpiritOther.value = '';
-        }
+        updateFiltersForCategory();
         renderDrinks();
     });
 
@@ -189,7 +187,9 @@ function setupEventListeners() {
         renderDrinks();
     });
     
-    filterSpiritOther.addEventListener('input', renderDrinks);
+    if(filterSpiritOther) filterSpiritOther.addEventListener('input', renderDrinks);
+    if(filterMinRating) filterMinRating.addEventListener('change', renderDrinks);
+    if(filterBeerType) filterBeerType.addEventListener('input', renderDrinks);
 
     // --- Magic Fetch Function ---
     magicFetchBtn.addEventListener('click', performFetch);
@@ -221,6 +221,68 @@ function setupEventListeners() {
             resetCameraPreview();
             drinkImageFile.value = '';
         });
+    }
+}
+
+// --- Dynamic Filter Updating ---
+function updateFiltersForCategory() {
+    const val = filterTypeSelect.value;
+    
+    // Reset inputs
+    filterSpiritSelect.value = '';
+    filterSpiritOther.style.display = 'none';
+    filterSpiritOther.value = '';
+    filterBeerType.value = '';
+    filterMinRating.value = '0';
+    
+    // Update Sorting Options
+    sortSelect.innerHTML = '';
+    const addOption = (value, text) => {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = text;
+        sortSelect.appendChild(opt);
+    };
+
+    if (val === 'all') {
+        addOption('recent', 'Recently Added');
+        addOption('rating', 'Highest Rated');
+        addOption('rating-desc', 'Lowest Rated');
+        addOption('name', 'Name (A-Z)');
+        addOption('location', 'Location');
+    } else if (val === 'cocktail') {
+        addOption('name', 'Name (A-Z)');
+        addOption('spirit-type', 'Spirit Type');
+        addOption('rating', 'Highest Rated');
+        addOption('rating-desc', 'Lowest Rated');
+    } else if (val === 'beer') {
+        addOption('name', 'Name (A-Z)');
+        addOption('rating', 'Highest Rated');
+        addOption('rating-desc', 'Lowest Rated');
+        addOption('recent', 'Recently Added');
+    } else if (val === 'spirit') {
+        addOption('name', 'Name (A-Z)');
+        addOption('rating', 'Highest Rated');
+        addOption('rating-desc', 'Lowest Rated');
+        addOption('recent', 'Recently Added');
+    }
+
+    // Toggle filter groups
+    spiritFilterGroup.style.display = 'none';
+    beerFilterGroup.style.display = 'none';
+    ratingFilterGroup.style.display = 'none';
+
+    if (val === 'all') {
+        spiritFilterGroup.style.display = 'flex';
+    } else if (val === 'beer') {
+        beerFilterGroup.style.display = 'flex';
+        ratingFilterGroup.style.display = 'flex';
+    } else if (val === 'cocktail') {
+        // Cocktails mainly rely on sorting, but keep rating filter available
+        ratingFilterGroup.style.display = 'flex'; 
+    } else if (val === 'spirit') {
+        spiritFilterGroup.style.display = 'flex';
+        ratingFilterGroup.style.display = 'flex';
     }
 }
 
@@ -412,7 +474,19 @@ function renderDrinks() {
         });
     }
 
-    // 3. Global Text Search
+    // 3. New Filter: By Minimum Rating
+    const minR = parseInt(filterMinRating.value) || 0;
+    if (minR > 0) {
+        drinks = drinks.filter(d => d.rating >= minR);
+    }
+
+    // 4. New Filter: By Beer Type
+    const beerT = filterBeerType.value.toLowerCase().trim();
+    if (beerT && typeFilter === 'beer') {
+        drinks = drinks.filter(d => d.category === 'beer' && d.subtype && d.subtype.toLowerCase().includes(beerT));
+    }
+
+    // 5. Global Text Search
     if (globalSearchInput && globalSearchInput.value) {
         const searchStr = globalSearchInput.value.toLowerCase().trim();
         drinks = drinks.filter(d => {
@@ -429,7 +503,7 @@ function renderDrinks() {
         });
     }
 
-    // 4. Sorting
+    // 6. Sorting
     const sortBy = sortSelect.value;
     if (sortBy === 'recent') {
         drinks.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
@@ -437,10 +511,12 @@ function renderDrinks() {
         drinks.sort((a, b) => b.rating - a.rating);
     } else if (sortBy === 'rating-desc') {
         drinks.sort((a, b) => a.rating - b.rating);
-    } else if (sortBy === 'type') {
-        drinks.sort((a, b) => a.category.localeCompare(b.category));
     } else if (sortBy === 'location') {
         drinks.sort((a, b) => (a.location || '').localeCompare(b.location || ''));
+    } else if (sortBy === 'name') {
+        drinks.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'spirit-type') {
+        drinks.sort((a, b) => (a.spiritType || '').localeCompare(b.spiritType || ''));
     }
 
     drinkGrid.innerHTML = '';

@@ -57,19 +57,39 @@
                     </select>
                 </div>
 
-                <div class="input-group" id="spirit-filter-group" style="display: none;">
-                    <i class="ri-goblet-fill"></i>
-                    <select id="filter-spirit-select">
-                        <option value="">Any Spirit</option>
-                        <option value="Whiskey">Whiskey</option>
-                        <option value="Vodka">Vodka</option>
-                        <option value="Rum">Rum</option>
-                        <option value="Tequila">Tequila</option>
-                        <option value="Gin">Gin</option>
-                        <option value="Brandy">Brandy</option>
-                        <option value="Other">Other...</option>
-                    </select>
-                    <input type="text" id="filter-spirit-other" placeholder="Type spirit..." style="display: none; margin-left: 0.5rem; border-left: 1px solid var(--glass-border); padding-left: 0.5rem; width: 120px;">
+                <div id="dynamic-filters-container" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <!-- Min Rating Filter -->
+                    <div class="input-group" id="rating-filter-group" style="display: none;">
+                        <i class="ri-star-fill"></i>
+                        <select id="filter-min-rating">
+                            <option value="0">Any Rating</option>
+                            <option value="5">5 Stars Only</option>
+                            <option value="4">4+ Stars</option>
+                            <option value="3">3+ Stars</option>
+                        </select>
+                    </div>
+
+                    <!-- Beer Type Filter -->
+                    <div class="input-group" id="beer-filter-group" style="display: none;">
+                        <i class="ri-beer-fill"></i>
+                        <input type="text" id="filter-beer-type" placeholder="Beer Type (e.g. IPA)">
+                    </div>
+
+                    <!-- Spirit Filter -->
+                    <div class="input-group" id="spirit-filter-group" style="display: none;">
+                        <i class="ri-goblet-fill"></i>
+                        <select id="filter-spirit-select">
+                            <option value="">Any Spirit</option>
+                            <option value="Whiskey">Whiskey</option>
+                            <option value="Vodka">Vodka</option>
+                            <option value="Rum">Rum</option>
+                            <option value="Tequila">Tequila</option>
+                            <option value="Gin">Gin</option>
+                            <option value="Brandy">Brandy</option>
+                            <option value="Other">Other...</option>
+                        </select>
+                        <input type="text" id="filter-spirit-other" placeholder="Type spirit..." style="display: none; margin-left: 0.5rem; border-left: 1px solid var(--surface-border); padding-left: 0.5rem; width: 120px;">
+                    </div>
                 </div>
             </div>
 
