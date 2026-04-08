@@ -897,3 +897,154 @@ textarea {
   background: var(--primary-color);
   color: #000;
 }
+
+/* --- Vault vs Wishlist Tabs --- */
+.view-tabs-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.view-tabs {
+  display: inline-flex;
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: 30px;
+  padding: 4px;
+}
+
+.tab-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-btn.active {
+  background: var(--primary-color);
+  color: #000;
+}
+
+.tab-btn:not(.active):hover {
+  color: #fff;
+}
+
+/* --- Stats Dashboard --- */
+.stats-dashboard {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.8s ease-out 0.1s backwards;
+}
+
+.stat-card {
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-family: 'League Spartan', sans-serif;
+  color: #fff;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+/* --- Form Status Toggle --- */
+.status-toggle-group {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  padding-bottom: 1rem;
+}
+
+.status-toggle {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.radio-label {
+  cursor: pointer;
+  flex: 1;
+}
+
+.radio-label input {
+  display: none;
+}
+
+.custom-radio {
+  display: block;
+  text-align: center;
+  padding: 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.radio-label input:checked + .custom-radio {
+  background: rgba(197, 160, 89, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Card Edit Button */
+.edit-btn {
+  position: absolute;
+  top: 1rem;
+  right: 3.5rem;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex; /* Overridden to none by desktop-only on mobile */
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: white;
+  border: 1px solid var(--surface-border);
+  cursor: pointer;
+  z-index: 10;
+}
+.edit-btn:hover { background: var(--primary-color); border-color: var(--primary-color); color: #000; }
+.swipe-container:hover .edit-btn { opacity: 1; }
+
+.drink-card.is-wishlist {
+  border-style: dashed;
+}
+
+.drink-card.is-wishlist .card-image img {
+  filter: grayscale(80%) contrast(100%);
+  opacity: 0.5;
+}
+
+/* Desktop Only Override for Edit Button */
+@media (min-width: 768px) {
+  .edit-btn { display: flex !important; }
+}

@@ -29,6 +29,29 @@
             <p class="subtitle">Your curated journal of liquid craftsmanship</p>
         </header>
 
+        <!-- View Tabs & Stats -->
+        <div class="view-tabs-container">
+            <div class="view-tabs">
+                <button id="tab-vault" class="tab-btn active"><i class="ri-safe-2-line"></i> My Vault</button>
+                <button id="tab-wishlist" class="tab-btn"><i class="ri-bookmark-line"></i> Wishlist</button>
+            </div>
+        </div>
+
+        <section id="stats-dashboard" class="stats-dashboard">
+             <div class="stat-card">
+                 <div class="stat-value" id="stat-total-drinks">0</div>
+                 <div class="stat-label">Saved Items</div>
+             </div>
+             <div class="stat-card" id="stat-card-rating">
+                 <div class="stat-value" id="stat-avg-rating">0.0 <i class="ri-star-fill text-accent" style="color: var(--primary-color);"></i></div>
+                 <div class="stat-label">Avg Rating</div>
+             </div>
+             <div class="stat-card" id="stat-card-top-cat">
+                 <div class="stat-value" id="stat-top-cat">-</div>
+                 <div class="stat-label">Top Category</div>
+             </div>
+        </section>
+
         <!-- Tool Bar (Sorting, Filtering, Action) -->
         <section class="toolbar">
             <div class="filters">
@@ -131,7 +154,22 @@
             <h2 id="modal-title">Log a Drink</h2>
             
             <form id="add-drink-form">
+                <input type="hidden" id="edit-drink-id" name="id" value="">
                 
+                <div class="form-group status-toggle-group">
+                    <label>Entry Status</label>
+                    <div class="status-toggle">
+                        <label class="radio-label">
+                            <input type="radio" name="status" value="vault" checked>
+                            <span class="custom-radio"><i class="ri-safe-2-fill"></i> Vaulted (Tried)</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="status" value="wishlist">
+                            <span class="custom-radio"><i class="ri-bookmark-fill"></i> Wishlist (To Try)</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group w-50">
                         <label for="drink-category">Category</label>
@@ -141,7 +179,7 @@
                             <option value="cocktail">Cocktail</option>
                         </select>
                     </div>
-                    <div class="form-group w-50">
+                    <div class="form-group w-50" id="rating-group-container">
                         <label for="drink-rating">Rating</label>
                         <div class="star-rating">
                             <i class="ri-star-line" data-val="1"></i>
@@ -151,22 +189,6 @@
                             <i class="ri-star-line" data-val="5"></i>
                             <input type="hidden" id="drink-rating" name="rating" value="0" required>
                         </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Photo</label>
-                    <div style="display: flex; gap: 10px; flex-direction: column;">
-                        <input type="file" id="drink-image-file" accept="image/*" capture="environment" style="display: none;">
-                        <button type="button" id="trigger-camera-btn" class="secondary-btn" style="justify-content: center; display: flex; gap: 5px;">
-                            <i class="ri-camera-fill"></i> Snap Photo / Upload
-                        </button>
-                        <div id="camera-preview-container" class="hidden" style="margin-top: 5px; position: relative;">
-                            <img id="camera-preview" src="" style="width: 100%; height: 180px; object-fit: cover; border-radius: var(--border-radius-sm); border: 1px solid var(--surface-border);">
-                            <button type="button" id="remove-photo-btn" class="icon-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius: 50%; color: white;"><i class="ri-close-line"></i></button>
-                        </div>
-                        <p style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; letter-spacing: 1px; margin: 5px 0;">— OR PASTE IMAGE URL —</p>
-                        <input type="url" id="drink-image" name="image" placeholder="https://...">
                     </div>
                 </div>
 
@@ -180,6 +202,22 @@
                     <div class="form-group">
                         <label for="drink-location" id="location-label">Location Bought / Brewery</label>
                         <input type="text" id="drink-location" name="location" placeholder="e.g. Dublin, Local Pub">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem; border-top: 1px solid var(--surface-border); padding-top: 1rem;">
+                    <label>Photo (Optional)</label>
+                    <div style="display: flex; gap: 10px; flex-direction: column;">
+                        <input type="file" id="drink-image-file" accept="image/*" capture="environment" style="display: none;">
+                        <button type="button" id="trigger-camera-btn" class="secondary-btn" style="justify-content: center; display: flex; gap: 5px;">
+                            <i class="ri-camera-fill"></i> Snap Photo / Upload
+                        </button>
+                        <div id="camera-preview-container" class="hidden" style="margin-top: 5px; position: relative;">
+                            <img id="camera-preview" src="" style="width: 100%; height: 180px; object-fit: cover; border-radius: var(--border-radius-sm); border: 1px solid var(--surface-border);">
+                            <button type="button" id="remove-photo-btn" class="icon-btn" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius: 50%; color: white;"><i class="ri-close-line"></i></button>
+                        </div>
+                        <p style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; letter-spacing: 1px; margin: 5px 0;">— OR PASTE IMAGE URL —</p>
+                        <input type="url" id="drink-image" name="image" placeholder="https://...">
                     </div>
                 </div>
 

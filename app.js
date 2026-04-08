@@ -43,6 +43,19 @@ let currentImageBase64 = null;
 // Search
 const globalSearchInput = document.getElementById('global-search');
 
+// --- New DOM / State ---
+const tabVaultBtn = document.getElementById('tab-vault');
+const tabWishlistBtn = document.getElementById('tab-wishlist');
+const statsDashboard = document.getElementById('stats-dashboard');
+const statTotalDrinks = document.getElementById('stat-total-drinks');
+const statAvgRating = document.getElementById('stat-avg-rating');
+const statTopCat = document.getElementById('stat-top-cat');
+const statusRadios = document.getElementsByName('status');
+const editDrinkIdInput = document.getElementById('edit-drink-id');
+const ratingGroupContainer = document.getElementById('rating-group-container');
+
+let currentView = 'vault';
+
 // --- App Initialization ---
 function init() {
     updateFiltersForCategory();
@@ -55,11 +68,40 @@ function setupEventListeners() {
     // --- Modal Logic ---
     addDrinkBtn.addEventListener('click', () => {
         addDrinkForm.reset();
+        editDrinkIdInput.value = '';
+        document.getElementById('modal-title').textContent = 'Log a Drink';
         resetStars();
         updateDynamicFields();
-        resetFetchPreview();
+        if(typeof resetFetchPreview === 'function') resetFetchPreview();
         resetCameraPreview();
+        ratingGroupContainer.classList.remove('hidden');
+        const selectedRadio = document.querySelector(`input[name="status"][value="${currentView}"]`);
+        if(selectedRadio) selectedRadio.checked = true;
+        if(currentView === 'wishlist') ratingGroupContainer.classList.add('hidden');
         modalOverlay.classList.remove('hidden');
+    });
+
+    // --- View Tabs ---
+    if(tabVaultBtn) tabVaultBtn.addEventListener('click', () => {
+        currentView = 'vault';
+        tabVaultBtn.classList.add('active');
+        tabWishlistBtn.classList.remove('active');
+        statsDashboard.style.display = 'flex';
+        renderDrinks();
+    });
+    if(tabWishlistBtn) tabWishlistBtn.addEventListener('click', () => {
+        currentView = 'wishlist';
+        tabWishlistBtn.classList.add('active');
+        tabVaultBtn.classList.remove('active');
+        statsDashboard.style.display = 'none';
+        renderDrinks();
+    });
+
+    statusRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if(e.target.value === 'wishlist') ratingGroupContainer.classList.add('hidden');
+            else ratingGroupContainer.classList.remove('hidden');
+        });
     });
 
     closeModalBtn.addEventListener('click', () => {
@@ -73,19 +115,35 @@ function setupEventListeners() {
     // --- Dynamic Form Updates ---
     categorySelect.addEventListener('change', updateDynamicFields);
 
-    // Dynamic field event delegation for the "Other" spirit selection
+    // Dynamic field event delegation for the "Other" selection
     dynamicFieldsContainer.addEventListener('change', (e) => {
-        if (e.target && e.target.id === 'drink-spirit-base') {
-            const otherGroup = document.getElementById('spirit-other-group');
-            const otherInput = document.getElementById('drink-spirit-other');
-            if (otherGroup) {
-                if (e.target.value === 'Other') {
-                    otherGroup.classList.remove('hidden');
-                    otherInput.setAttribute('required', 'true');
-                } else {
-                    otherGroup.classList.add('hidden');
-                    otherInput.removeAttribute('required');
-                    otherInput.value = '';
+        if (e.target && e.target.tagName === 'SELECT') {
+            const selectId = e.target.id; 
+            let otherGroupId, otherInputId;
+
+            if (selectId === 'drink-spirit-base') {
+                otherGroupId = 'spirit-other-group';
+                otherInputId = 'drink-spirit-other';
+            } else if (selectId === 'drink-spirit-secondary-base') {
+                otherGroupId = 'spirit-secondary-other-group';
+                otherInputId = 'drink-spirit-secondary-other';
+            } else if (selectId === 'drink-beer-base') {
+                otherGroupId = 'beer-other-group';
+                otherInputId = 'drink-beer-other';
+            }
+
+            if (otherGroupId && otherInputId) {
+                const otherGroup = document.getElementById(otherGroupId);
+                const otherInput = document.getElementById(otherInputId);
+                if (otherGroup) {
+                    if (e.target.value === 'Other') {
+                        otherGroup.classList.remove('hidden');
+                        otherInput.setAttribute('required', 'true');
+                    } else {
+                        otherGroup.classList.add('hidden');
+                        otherInput.removeAttribute('required');
+                        otherInput.value = '';
+                    }
                 }
             }
         }
@@ -113,13 +171,15 @@ function setupEventListeners() {
     addDrinkForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        if(ratingInput.value == "0") {
+        if (!ratingGroupContainer.classList.contains('hidden') && ratingInput.value == "0") {
             alert("Please select a rating!");
             return;
         }
 
         const formData = new FormData(addDrinkForm);
         const category = formData.get('category');
+        const status = formData.get('status') || 'vault';
+        const editId = editDrinkIdInput.value;
         
         let finalImage = currentImageBase64 || formData.get('image').trim() || '';
 
@@ -133,21 +193,27 @@ function setupEventListeners() {
         }
 
         const newDrink = {
-            id: Date.now().toString(),
+            id: editId || Date.now().toString(),
             name: derivedName,
             category: category,
-            rating: parseInt(formData.get('rating')),
+            rating: status === 'wishlist' ? 0 : parseInt(formData.get('rating') || 0),
             image: finalImage,
+            status: status,
             dateAdded: new Date().toISOString()
         };
 
         if (category === 'beer') {
-            newDrink.subtype = formData.get('subtype') ? formData.get('subtype').trim() : '';
+            let base = formData.get('beerBase');
+            if (base === 'Other') base = formData.get('beerOther').trim();
+            newDrink.subtype = base || '';
+            
             newDrink.maker = formData.get('maker') ? formData.get('maker').trim() : '';
+            newDrink.description = formData.get('description') ? formData.get('description').trim() : '';
         } else if (category === 'spirit') {
             newDrink.maker = formData.get('maker') ? formData.get('maker').trim() : '';
             newDrink.subtype = formData.get('subtype') ? formData.get('subtype').trim() : '';
             newDrink.location = formData.get('location') ? formData.get('location').trim() : '';
+            newDrink.description = formData.get('description') ? formData.get('description').trim() : '';
             
             let base = formData.get('spiritBase');
             if (base === 'Other') base = formData.get('spiritOther').trim();
@@ -160,10 +226,26 @@ function setupEventListeners() {
             let base = formData.get('spiritBase');
             if (base === 'Other') base = formData.get('spiritOther').trim();
             newDrink.spiritType = base || '';
+
+            let secBase = formData.get('spiritSecondaryBase');
+            if (secBase && secBase === 'Other') secBase = formData.get('spiritSecondaryOther').trim();
+            newDrink.secondarySpirit = (secBase === 'None' || !secBase) ? '' : secBase;
         }
 
         const drinks = getDrinks();
-        drinks.push(newDrink);
+        if (editId) {
+            const index = drinks.findIndex(d => d.id === editId);
+            if (index !== -1) {
+                newDrink.dateAdded = drinks[index].dateAdded; // preserve date
+                if (!currentImageBase64 && !formData.get('image').trim()) {
+                     newDrink.image = drinks[index].image; // preserve image if not changed
+                }
+                drinks[index] = newDrink;
+            }
+        } else {
+            drinks.push(newDrink);
+        }
+        
         saveDrinks(drinks);
         
         modalOverlay.classList.add('hidden');
@@ -346,6 +428,33 @@ const spiritOptionsCombo = `
     <option value="Other">Other...</option>
 `;
 
+const spiritSecondaryOptionsCombo = `
+    <option value="None">None</option>
+    <option value="Whiskey">Whiskey</option>
+    <option value="Vodka">Vodka</option>
+    <option value="Rum">Rum</option>
+    <option value="Tequila">Tequila</option>
+    <option value="Gin">Gin</option>
+    <option value="Brandy">Brandy</option>
+    <option value="Vermouth">Vermouth</option>
+    <option value="Amaro">Amaro / Bitter</option>
+    <option value="Liqueur">Liqueur</option>
+    <option value="Other">Other...</option>
+`;
+
+const beerOptionsCombo = `
+    <option value="">Select...</option>
+    <option value="IPA">IPA</option>
+    <option value="Stout">Stout</option>
+    <option value="Lager">Lager</option>
+    <option value="Pilsner">Pilsner</option>
+    <option value="Ale">Ale</option>
+    <option value="Wheat">Wheat</option>
+    <option value="Sour">Sour</option>
+    <option value="Porter">Porter</option>
+    <option value="Other">Other...</option>
+`;
+
 // --- Dynamic Form Builder ---
 function updateDynamicFields() {
     const category = categorySelect.value;
@@ -357,13 +466,25 @@ function updateDynamicFields() {
                 <label for="drink-name" style="color: var(--primary-color);">Entry Name</label>
                 <input type="text" id="drink-name" name="name" placeholder="e.g. Guinness, All Day IPA" required>
             </div>
-            <div class="form-group">
-                <label for="drink-subtype">Type of Beer</label>
-                <input type="text" id="drink-subtype" name="subtype" placeholder="e.g. Stout, IPA, Lager...">
+            <div class="form-row">
+                <div class="form-group w-50">
+                    <label for="drink-beer-base">Type of Beer</label>
+                    <select id="drink-beer-base" name="beerBase" required>
+                        ${beerOptionsCombo}
+                    </select>
+                </div>
+                <div class="form-group w-50 hidden" id="beer-other-group">
+                    <label for="drink-beer-other">Custom Type</label>
+                    <input type="text" id="drink-beer-other" name="beerOther" placeholder="e.g. Gose">
+                </div>
             </div>
             <div class="form-group">
                 <label for="drink-maker">Brewery Name</label>
                 <input type="text" id="drink-maker" name="maker" placeholder="e.g. Guinness St. James's Gate">
+            </div>
+            <div class="form-group">
+                <label for="drink-description">Tasting Notes</label>
+                <textarea id="drink-description" name="description" placeholder="e.g. Hoppy, notes of citrus..."></textarea>
             </div>
         `;
     } else if (category === 'spirit') {
@@ -394,6 +515,10 @@ function updateDynamicFields() {
                 <label for="drink-location">Location Bought</label>
                 <input type="text" id="drink-location" name="location" placeholder="e.g. Local Liquor Store">
             </div>
+            <div class="form-group">
+                <label for="drink-description">Tasting Notes</label>
+                <textarea id="drink-description" name="description" placeholder="e.g. Peaty, smooth finish..."></textarea>
+            </div>
         `;
     } else if (category === 'cocktail') {
         dynamicFieldsContainer.innerHTML = `
@@ -407,7 +532,7 @@ function updateDynamicFields() {
             </div>
             <div class="form-row">
                 <div class="form-group w-50">
-                    <label for="drink-spirit-base">Primary Spirit (For filtering)</label>
+                    <label for="drink-spirit-base">Primary Spirit</label>
                     <select id="drink-spirit-base" name="spiritBase">
                         ${spiritOptionsCombo}
                     </select>
@@ -415,6 +540,18 @@ function updateDynamicFields() {
                 <div class="form-group w-50 hidden" id="spirit-other-group">
                     <label for="drink-spirit-other">Custom Spirit</label>
                     <input type="text" id="drink-spirit-other" name="spiritOther" placeholder="e.g. Mezcal">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group w-50">
+                    <label for="drink-spirit-secondary-base">Secondary Spirit</label>
+                    <select id="drink-spirit-secondary-base" name="spiritSecondaryBase">
+                        ${spiritSecondaryOptionsCombo}
+                    </select>
+                </div>
+                <div class="form-group w-50 hidden" id="spirit-secondary-other-group">
+                    <label for="drink-spirit-secondary-other">Custom Secondary</label>
+                    <input type="text" id="drink-spirit-secondary-other" name="spiritSecondaryOther" placeholder="e.g. Chartreuse">
                 </div>
             </div>
             <div class="form-group">
@@ -447,6 +584,10 @@ function highlightStars(val) {
 // --- Rendering Logic ---
 function renderDrinks() {
     let drinks = getDrinks();
+
+    // 0. Update Stats Dashboard & Filter by View
+    if(typeof renderStats === 'function') renderStats(drinks.filter(d => (d.status || 'vault') === 'vault'));
+    drinks = drinks.filter(d => (d.status || 'vault') === currentView);
 
     // 1. Filter by Category
     const typeFilter = filterTypeSelect.value;
@@ -542,7 +683,7 @@ function renderDrinks() {
         deleteAction.onclick = () => deleteDrink(drink.id);
 
         const card = document.createElement('div');
-        card.className = `drink-card type-${drink.category}`;
+        card.className = `drink-card type-${drink.category} ${currentView === 'wishlist' ? 'is-wishlist' : ''}`;
         
         // Touch events for swipe to delete
         let startX = 0;
@@ -584,6 +725,10 @@ function renderDrinks() {
         let titleHtml = '';
         let descHtml = '';
 
+        if (drink.description) {
+            descHtml = `<p class="card-desc italic-notes">"${drink.description.substring(0, 150)}${drink.description.length > 150 ? '...' : ''}"</p>`;
+        }
+
         if (drink.category === 'cocktail') {
             titleHtml = `
                 <h3 class="card-title cocktail-title">
@@ -591,9 +736,6 @@ function renderDrinks() {
                     ${drink.location ? `<span class="drink-at-text"> at </span><span class="drink-location-name">${drink.location}</span>` : ''}
                 </h3>
             `;
-            if (drink.description) {
-                descHtml = `<p class="card-desc italic-notes">"${drink.description.substring(0, 150)}${drink.description.length > 150 ? '...' : ''}"</p>`;
-            }
         } else {
             // For Beer/Spirit
             const makerName = drink.maker || (drink.category === 'beer' ? drink.location : '') || 'Unknown Maker';
@@ -609,11 +751,13 @@ function renderDrinks() {
         }
 
         let starsHtml = '';
-        for (let i = 1; i <= 5; i++) {
-            if (i <= drink.rating) {
-                starsHtml += '<i class="ri-star-fill"></i>';
-            } else {
-                starsHtml += '<i class="ri-star-line empty"></i>';
+        if (currentView !== 'wishlist') {
+            for (let i = 1; i <= 5; i++) {
+                if (i <= drink.rating) {
+                    starsHtml += '<i class="ri-star-fill"></i>';
+                } else {
+                    starsHtml += '<i class="ri-star-line empty"></i>';
+                }
             }
         }
 
@@ -641,6 +785,7 @@ function renderDrinks() {
         card.innerHTML = `
             <div class="card-accent"></div>
             <button class="delete-btn desktop-only" onclick="deleteDrink('${drink.id}')" title="Delete"><i class="ri-delete-bin-line"></i></button>
+            <button class="edit-btn desktop-only" onclick="editDrink('${drink.id}')" title="Edit"><i class="ri-pencil-line"></i></button>
             <div class="card-image">
                 ${imgHtml}
             </div>
@@ -675,6 +820,127 @@ window.deleteDrink = function(id) {
         renderDrinks();
     }
 };
+
+window.editDrink = function(id) {
+    const drinks = getDrinks();
+    const drink = drinks.find(d => d.id === id);
+    if (!drink) return;
+
+    addDrinkForm.reset();
+    editDrinkIdInput.value = drink.id;
+    document.getElementById('modal-title').textContent = 'Edit Entry';
+    
+    // Set status
+    const status = drink.status || 'vault';
+    const selectedRadio = document.querySelector(`input[name="status"][value="${status}"]`);
+    if(selectedRadio) selectedRadio.checked = true;
+
+    // Set category
+    categorySelect.value = drink.category;
+    updateDynamicFields();
+
+    // Populate data
+    if (document.getElementById('drink-name') && drink.name && drink.category !== 'spirit') document.getElementById('drink-name').value = drink.name;
+    if (document.getElementById('drink-maker') && drink.maker) document.getElementById('drink-maker').value = drink.maker;
+    if (document.getElementById('drink-subtype') && drink.subtype) document.getElementById('drink-subtype').value = drink.subtype;
+    if (document.getElementById('drink-location') && drink.location) document.getElementById('drink-location').value = drink.location;
+    if (document.getElementById('drink-description') && drink.description) document.getElementById('drink-description').value = drink.description;
+    
+    if (drink.category === 'beer') {
+        const beerBaseSelect = document.getElementById('drink-beer-base');
+        const beerOtherInput = document.getElementById('drink-beer-other');
+        if (beerBaseSelect) {
+            const options = Array.from(beerBaseSelect.options).map(o => o.value);
+            if (options.includes(drink.subtype)) {
+                beerBaseSelect.value = drink.subtype;
+            } else if (drink.subtype) {
+                beerBaseSelect.value = 'Other';
+                document.getElementById('beer-other-group').classList.remove('hidden');
+                if(beerOtherInput) beerOtherInput.value = drink.subtype;
+            }
+        }
+    }
+
+    if (drink.category === 'spirit' || drink.category === 'cocktail') {
+        const spiritBaseSelect = document.getElementById('drink-spirit-base');
+        const spiritOtherInput = document.getElementById('drink-spirit-other');
+        if (spiritBaseSelect) {
+            const options = Array.from(spiritBaseSelect.options).map(o => o.value);
+            if (options.includes(drink.spiritType)) {
+                spiritBaseSelect.value = drink.spiritType;
+            } else if (drink.spiritType) {
+                spiritBaseSelect.value = 'Other';
+                document.getElementById('spirit-other-group').classList.remove('hidden');
+                if(spiritOtherInput) spiritOtherInput.value = drink.spiritType;
+            }
+        }
+        
+        if (drink.category === 'cocktail' && drink.secondarySpirit) {
+            const spiritSecSelect = document.getElementById('drink-spirit-secondary-base');
+            const spiritSecOther = document.getElementById('drink-spirit-secondary-other');
+            if (spiritSecSelect) {
+                const options = Array.from(spiritSecSelect.options).map(o => o.value);
+                if (options.includes(drink.secondarySpirit)) {
+                    spiritSecSelect.value = drink.secondarySpirit;
+                } else if (drink.secondarySpirit && drink.secondarySpirit !== 'None') {
+                    spiritSecSelect.value = 'Other';
+                    document.getElementById('spirit-secondary-other-group').classList.remove('hidden');
+                    if(spiritSecOther) spiritSecOther.value = drink.secondarySpirit;
+                }
+            }
+        }
+    }
+
+    // Set Rating
+    ratingInput.value = drink.rating || "0";
+    if (status === 'wishlist') {
+        ratingGroupContainer.classList.add('hidden');
+    } else {
+        ratingGroupContainer.classList.remove('hidden');
+    }
+    highlightStars(drink.rating || "0");
+
+    // Camera Preview
+    if (drink.image) {
+        cameraPreview.src = drink.image;
+        cameraPreviewContainer.classList.remove('hidden');
+        drinkImageInput.disabled = true;
+    } else {
+        resetCameraPreview();
+    }
+
+    modalOverlay.classList.remove('hidden');
+};
+
+function renderStats(vaultDrinks) {
+    if(!statTotalDrinks || !statAvgRating || !statTopCat) return;
+
+    statTotalDrinks.textContent = vaultDrinks.length;
+    
+    if(vaultDrinks.length === 0) {
+        statAvgRating.innerHTML = '0.0 <i class="ri-star-fill text-accent" style="color: var(--primary-color);"></i>';
+        statTopCat.textContent = '-';
+        return;
+    }
+
+    const avg = vaultDrinks.reduce((sum, d) => sum + d.rating, 0) / vaultDrinks.length;
+    statAvgRating.innerHTML = `${avg.toFixed(1)} <i class="ri-star-fill text-accent" style="color: var(--primary-color);"></i>`;
+
+    const catCounts = {};
+    vaultDrinks.forEach(d => {
+        catCounts[d.category] = (catCounts[d.category] || 0) + 1;
+    });
+    
+    let topCat = '-';
+    let max = 0;
+    for(const [cat, count] of Object.entries(catCounts)) {
+        if(count > max) { max = count; topCat = cat; }
+    }
+    // Capitalize topCat
+    if (topCat !== '-') topCat = topCat.charAt(0).toUpperCase() + topCat.slice(1);
+
+    statTopCat.textContent = topCat;
+}
 
 // --- Recommendation Engine ---
 const RECOMMENDATION_DB = [
